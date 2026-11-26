@@ -1,20 +1,23 @@
-"""Entry for make.fun bounty "One Line, One Laugh" (revision v2).
+"""One-liner entry for the make.fun bounty "One Line, One Laugh".
 
-Writes one funny line to /output/entry.txt: a plumber sizes up a leak
-in four seconds, then prices the whole job in cups of coffee.
+Revision v2. The program writes a single joke to /output/entry.txt:
+a plumber looks at a leak for four seconds and then prices the
+whole repair in cups of coffee.
 """
 
 from pathlib import Path
 
 ENTRY = 'The plumber looked at the leak for four seconds and said "this is a two-coffee job."'
 
+OUTPUT_PATH = Path("/output/entry.txt")
+
 
 def validate_entry(text: str) -> str:
-    """Gate rules for the entry text (RULES.txt).
+    """Check the entry against the gate rules in RULES.txt.
 
-    The sealed scorer accepts UTF-8 text of 1 to 200 characters that is
-    not only white space. The file must hold exactly these bytes, with
-    no trailing newline added by the write.
+    The sealed scorer reads UTF-8 text of 1 to 200 characters that
+    is not only white space. The file on disk must contain exactly
+    these bytes, with no trailing newline appended by the writer.
     """
     if not 1 <= len(text) <= 200:
         raise ValueError(f"ENTRY is {len(text)} characters, gate is 1-200")
@@ -23,14 +26,22 @@ def validate_entry(text: str) -> str:
     return text
 
 
+def write_entry(entry: str) -> bytes:
+    """Write the validated entry, then read the file back.
+
+    Returns the exact bytes now on disk so main() can compare them
+    against the entry instead of trusting the write alone.
+    """
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_PATH.write_text(entry, encoding="utf-8")
+    return OUTPUT_PATH.read_bytes()
+
+
 def main() -> None:
     entry = validate_entry(ENTRY)
-    out = Path("/output/entry.txt")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(entry, encoding="utf-8")
+    data = write_entry(entry)
     # Read-back check: the bytes on disk must be exactly the entry,
     # with no trailing newline added by the write.
-    data = out.read_bytes()
     if data != entry.encode("utf-8"):
         raise ValueError("entry.txt does not match ENTRY")
     if data.endswith(b"\n"):
